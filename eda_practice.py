@@ -1,10 +1,16 @@
+"""
+eda_practice
+"""
+
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def basic_analysis(df: pd.DataFrame):
-
+def basic_analysis(df: pd.DataFrame) -> None:
+    """
+    basic analysis recommand by Chatgpt.
+    """
     print(f"Basic info:\n{df.info()}\n")
 
     print(f"Head:\n{df.head()}\n")
@@ -20,17 +26,21 @@ def basic_analysis(df: pd.DataFrame):
 
     print(f"sex distribution:\n{df['Sex'].value_counts()}\n")
 
-    print(f"Embarked distribution:\n{df['Embarked'].value_counts(dropna=False)}")
+    print(f"Embarked distribution:\
+          \n{df['Embarked'].value_counts(dropna=False)}")
 
-def survived_analysis(df: pd.DataFrame, column:str):
-    describe_df1 = df[df['Survived']==0][column].describe()
-    describe_df2 = df[df['Survived']==1][column].describe()
+
+def survived_analysis(df: pd.DataFrame, column: str) -> None:
+    describe_df1 = df[df['Survived'] == 0][column].describe()
+    describe_df2 = df[df['Survived'] == 1][column].describe()
     concated_df = pd.concat([describe_df1, describe_df2], axis=1)
     print(f"Now analysis {column}")
-    concated_df.columns=[f"{column} of Dead", f"{column} of Alive"]
+    concated_df.columns = [f"{column} of Dead", f"{column} of Alive"]
     print(concated_df)
 
+
 if __name__ == "__main__":
-    df = pd.read_csv("/home/busybutlazy/kaggle_projects/ML_practice/titanic/train.csv")
+    df = pd.read_csv(
+        "/home/busybutlazy/kaggle_projects/ML_practice/titanic/train.csv")
     # basic_analysis(df)
     survived_analysis(df, "Pclass")
