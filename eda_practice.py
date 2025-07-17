@@ -13,7 +13,9 @@ def basic_analysis(df: pd.DataFrame) -> None:
     """
     basic analysis recommand by Chatgpt.
     """
-    print(f"Basic info:\n{df.info()}\n")
+    print(f"Basic info:")
+    # 會自動print出資訊 return = None
+    df.info()
 
     print(f"Head:\n{df.head()}\n")
 
@@ -40,13 +42,22 @@ def survived_analysis(df: pd.DataFrame, column: str) -> None:
     concated_df.columns = [f"{column} of Dead", f"{column} of Alive"]
     print(concated_df)
 
+# 簡化 title 類別
+title_map = {
+    'Mr': 'Mr', 'Miss': 'Miss', 'Mrs': 'Mrs', 'Master': 'Master',
+    'Dr': 'Rare', 'Rev': 'Rare', 'Col': 'Rare', 'Major': 'Rare',
+    'Mlle': 'Miss', 'Ms': 'Miss', 'Mme': 'Mrs', 'Lady': 'Rare',
+    'Countess': 'Rare', 'Jonkheer': 'Rare', 'Don': 'Rare', 'Sir': 'Rare',
+    'Capt': 'Rare'
+}
+
 def preprocess(df):
     
     # 利用map取代值
     df['Sex'] = df["Sex"].map({'male':0, "female":1})
     
     # inplace = True 代表取代原有的內容 不新增值
-    df['Age'].fillna(df['Age'].median(), inplace = True)
+    df['Age'] = df['Age'].fillna(df['Age'].median())
     
     # Binnin pd.cut是利用值做區分位 pd.qcut則是利用分位來區分
     df['AgeGroup'] = pd.cut(
@@ -63,7 +74,7 @@ def preprocess(df):
     df.drop('Cabin', axis=1, inplace=True)
     
     # mode是眾數
-    df['Embarked'].fillna(df['Embarked'].mode()[0], inplace=True)
+    df['Embarked'] = df['Embarked'].fillna(df['Embarked'].mode()[0])
     # # 數值化
     # df['Embarked'] = df['Embarked'].map({"S": 0, "C": 1, "Q":2})
     # One-hot
@@ -72,21 +83,12 @@ def preprocess(df):
     df['Embarked_Q'] = (df['Embarked']=="Q").astype(int)
     
     # median中位數
-    df['Fare'].fillna(df['Fare'].median(), inplace=True)
+    df['Fare'] = df['Fare'].fillna(df['Fare'].median())
     
     # expand = True代表回傳整個df(會有title和index) False只回傳(series)
     # df[[]]的概念是一次選取多行 得到也是一個df
-    df[['Lastname', 'Title']] = df['Name'].str.extract('([A-Za-z]+),\s+([A-Za-z]+)\.', expand=True)
-    
-    
-    # 簡化 title 類別
-    title_map = {
-        'Mr': 'Mr', 'Miss': 'Miss', 'Mrs': 'Mrs', 'Master': 'Master',
-        'Dr': 'Rare', 'Rev': 'Rare', 'Col': 'Rare', 'Major': 'Rare',
-        'Mlle': 'Miss', 'Ms': 'Miss', 'Mme': 'Mrs', 'Lady': 'Rare',
-        'Countess': 'Rare', 'Jonkheer': 'Rare', 'Don': 'Rare', 'Sir': 'Rare',
-        'Capt': 'Rare'
-    }
+    # df[['Lastname', 'Title']] = df['Name'].str.extract(r'([A-Za-z]+),\s+([A-Za-z]+)\.', expand=True)
+    df['Title'] = df['Name'].str.extract(r'\s+([A-Za-z]+)\.', expand=True)
     
     df['Title'] = df['Title'].map(title_map)
     df['Title'] = df['Title'].fillna('Rare')
@@ -98,16 +100,36 @@ def preprocess(df):
     # 如果要翻回原文 則可以使用cat.categories
     df['Title'] = df['Title'].astype('category').cat.codes
     df['AgeGroup'] = df['AgeGroup'].astype('category').cat.codes
+    df.drop('Embarked',axis=1,inplace=True)
     
     return df    
     
 
+def cal_average_Fare(df: pd.DataFrame):
+    averages = df.groupby("Pclass")["Fare"].mean()
+    return averages
+
+def survived_average(df: pd.DataFrame):
+    return {place:df[df["Embarked"]==place]["Survived"].sum()/df[df["Embarked"]==place]["Survived"].count()  for place in ["S","C","Q"]}
+
+def draw_title(df: pd.DataFrame):
+    df["Title"]=df["Name"].str.extract(r"([A-Za-z]+)\.", expand=False)
+    
+    
+    df['Title']=df['Title'].map(title_map)
+    plt.figure(figsize=(10, 5))
+    sns.countplot(data=df,x="Title")
+    plt.show()
+    plt.close()
+    
 if __name__ == "__main__":
     current_dir = Path(__file__).parent
     print(current_dir)
     file_path = current_dir / "data" / "train.csv"
     df = pd.read_csv(file_path)
+    # draw_title(df)
+    # print(cal_average_Fare(df))
     # basic_analysis(df)
     # survived_analysis(df, "Pclass")
     processed_df = preprocess(df)
-    print(processed_df.head(5))
+    print(processed_df.dtypes)
